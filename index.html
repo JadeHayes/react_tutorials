@@ -13,8 +13,64 @@
 </head>
 <body>
 <div id='app'></div>
+<script>
+    window.API = {
+      fetchFriends(){
+        return new Promise((res, rej) => {
+          const friends = [
+            {
+              name: "Jordan",
+              active: true,
+            },
+            {
+              name: "Mikenzie",
+              active: true,
+            },
+
+            {
+              name: "Jake",
+              active: false,
+            }
+            ]
+
+          setTimeout(() => res(friends), 2000)
+        })
+      }
+    }
+</script>
 
 <script type="text/babel">
+    class Loading extends React.Component {
+      constructor(props) {
+        super(props)
+
+        this.state = {
+           text: 'Loading'
+        }
+      }
+      componentDidMount() {
+        const stopper = this.state.text + '...'
+
+        this.interval = window.setInterval(() => {
+          this.state.text === stopper
+            ? this.setState({text:'Loading'})
+            : this.setState((currentState) => {
+              return {
+                text: currentState.text + '.'
+              }
+            })
+          }, 300)
+        }
+
+        componentWillUnmount() {
+          // stops running our interval code after the component is unmounted
+          window.clearInterval(this.interval)
+        }
+      render(){
+        return <p> {this.state.text} </p>
+      }
+    }
+
     function ActiveFriends(props){
         return (
         <div>
@@ -55,26 +111,31 @@
     class App extends React.Component {
       constructor(props) {
           super(props);
-          
+
           this.state = {
-            friends : [
-            
-            { name: "Jordan",
-              active: true }, 
-
-            { name: "Mikenzie", 
-              active: true },
-
-            { name: "Jake",
-              active: false }
-            ],
+            friends : [],
             input:'',
+            loading: true,
           }
- 
+
           this.handleRemoveFriend = this.handleRemoveFriend.bind(this)
           this.updateInput = this.updateInput.bind(this)
           this.handleAddFriend = this.handleAddFriend.bind(this)
           this.handleToggleFriend = this.handleToggleFriend.bind(this)
+          console.log("---constructor---")
+      }
+
+      componentDidMount(){
+        console.log("---componentDidMount---")
+
+        API.fetchFriends()
+        .then((friends) => {
+          this.setState({
+            friends,
+            loading: false,
+          })
+          console.log('Friends': friends)
+        })
       }
 
       handleAddFriend (name) {
@@ -119,7 +180,10 @@
         })
       }
 
-      render(){        
+      render(){
+          if (this.state.loading === true){
+            return <Loading/>
+          }
           return (
               <div>
               <input
@@ -128,9 +192,9 @@
                 value={this.state.input}
                 onChange={this.updateInput}/>
 
-  
+
                 <button onClick={this.handleAddFriend}>Submit</button>
-                
+
                 <div>
                 <button onClick={() => this.setState({
                   friends: []
@@ -138,13 +202,13 @@
                 Clear All </button>
                 </div>
 
-                  <ActiveFriends 
+                  <ActiveFriends
                     onRemoveFriend={this.handleRemoveFriend}
                     list={this.state.friends.filter((friend) => friend.active === true
                       )}
                     onToggleFriend={this.handleToggleFriend} />
 
-                  <InactiveFriends 
+                  <InactiveFriends
                      list={this.state.friends.filter((friend) => friend.active === false)}
                     onToggleFriend={this.handleToggleFriend} />
               </div>
@@ -153,7 +217,7 @@
     }
 
     ReactDOM.render(
-        <App />,  
+        <App />,
         document.getElementById('app')
         )
 
